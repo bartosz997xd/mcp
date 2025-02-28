@@ -60,7 +60,11 @@ class SequentialThinkingServer {
     // Initialize intelligence maximization component
     this.intelligenceMaximizationModule = new IntelligenceMaximizationModule();
     
+    // Initialize Anthropic Thinking Protocol component
+    this.anthropicThinkingProtocol = new AnthropicThinkingProtocol();
+    
     console.error(chalk.cyan('MCP Sequential Thinking Server initialized with advanced intelligence capabilities'));
+    console.error(chalk.magenta('Anthropic Thinking Protocol enabled for enhanced reasoning capabilities'));
     console.error(chalk.green('Available cognitive architectures: Conceptual Blending Network, Bayesian Cognitive Architecture, Hierarchical Problem Solver'));
     console.error(chalk.green('Available epistemological frameworks: Empiricism, Rationalism, Constructivism, Critical Rationalism'));
     console.error(chalk.green('Available metacognitive strategies: Cognitive Decoupling, Metacognitive Questioning, Conceptual Blending Protocol'));
@@ -516,6 +520,66 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
             }
           }
           
+          // Apply Anthropic Thinking Protocol
+          if (promptMetadata) {
+            console.error(chalk.magenta('\nApplying Anthropic Thinking Protocol:'));
+            
+            // Apply the thinking protocol to the thought text
+            const thinkingProtocolResult = this.anthropicThinkingProtocol.applyThinkingProtocol(
+              validatedInput.thought,
+              promptMetadata
+            );
+            
+            // Set thinking protocol properties on the thought
+            validatedInput.rawThinking = thinkingProtocolResult.rawThinking;
+            validatedInput.structuredThinking = thinkingProtocolResult.structuredThinking;
+            validatedInput.thinkingProtocolRecommendations = thinkingProtocolResult.adaptiveRecommendations;
+            
+            // Calculate thinking quality score (0-10) based on structured thinking completeness
+            const structuredThinking = thinkingProtocolResult.structuredThinking;
+            let qualityScore = 5; // Default medium score
+            
+            // Assess quality based on completeness of structured thinking
+            const hasInitialEngagement = structuredThinking.initialEngagement && structuredThinking.initialEngagement.length > 0;
+            const hasProblemAnalysis = structuredThinking.problemAnalysis && structuredThinking.problemAnalysis.length > 0;
+            const hasMultipleHypotheses = structuredThinking.multipleHypotheses && structuredThinking.multipleHypotheses.length > 1;
+            const hasTestingVerification = structuredThinking.testingAndVerification && structuredThinking.testingAndVerification.length > 0;
+            const hasKnowledgeSynthesis = structuredThinking.knowledgeSynthesis && structuredThinking.knowledgeSynthesis.length > 0;
+            
+            // Count quality factors
+            const qualityFactors = [
+              hasInitialEngagement,
+              hasProblemAnalysis,
+              hasMultipleHypotheses,
+              hasTestingVerification,
+              hasKnowledgeSynthesis
+            ].filter(Boolean).length;
+            
+            // Calculate score based on quality factors (0-10 scale)
+            qualityScore = Math.min(10, Math.max(1, 2 * qualityFactors));
+            validatedInput.thinkingQualityScore = qualityScore;
+            
+            // Log thinking protocol information
+            console.error(chalk.cyan('  Raw Thinking Extracted:'), thinkingProtocolResult.rawThinking ? 'Yes' : 'No');
+            console.error(chalk.cyan('  Structured Thinking Components:'));
+            console.error(`    Initial Engagement: ${hasInitialEngagement ? '✓' : '✗'}`);
+            console.error(`    Problem Analysis: ${hasProblemAnalysis ? '✓' : '✗'}`);
+            console.error(`    Multiple Hypotheses: ${hasMultipleHypotheses ? '✓' : '✗'} (${structuredThinking.multipleHypotheses.length})`);
+            console.error(`    Testing & Verification: ${hasTestingVerification ? '✓' : '✗'}`);
+            console.error(`    Knowledge Synthesis: ${hasKnowledgeSynthesis ? '✓' : '✗'}`);
+            
+            // Log thinking quality score
+            console.error(chalk.magenta(`  Thinking Quality Score: ${qualityScore}/10`));
+            
+            // Log recommendations if available
+            if (thinkingProtocolResult.adaptiveRecommendations.length > 0) {
+              console.error(chalk.cyan('  Thinking Protocol Recommendations:'));
+              thinkingProtocolResult.adaptiveRecommendations.forEach(recommendation => {
+                console.error(`    • ${recommendation}`);
+              });
+            }
+          }
+          
           // Generate intelligence maximization recommendations
           if (promptMetadata) {
             validatedInput.intelligenceRecommendations = this.intelligenceMaximizationModule.generateRecommendations(
@@ -751,7 +815,10 @@ ${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)
               cognitiveBiases: validatedInput.intelligenceRecommendations?.cognitiveBiases?.slice(0, 1),
               metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies?.slice(0, 1),
               insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts?.slice(0, 1)
-            } : undefined
+            } : undefined,
+            // Include thinking protocol information
+            thinkingQualityScore: validatedInput.thinkingQualityScore,
+            thinkingRecommendations: validatedInput.thinkingProtocolRecommendations?.slice(0, 2) // Limit to top 2
           }, null, 2)
         }]
       };
