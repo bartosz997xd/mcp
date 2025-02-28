@@ -1,0 +1,1119 @@
+#!/usr/bin/env node
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
+// Fixed chalk import for ESM
+import chalk from 'chalk';
+import { SemanticAnalyzer } from './analytics/semanticAnalyzer.js';
+import { ContradictionDetector } from './analytics/contradictionDetector.js';
+import { ReflectionEngine } from './analytics/reflectionEngine.js';
+import { GraphRenderer } from './visualization/graphRenderer.js';
+import { PromptAnalyzer, PromptContext } from './analytics/promptAnalyzer.js';
+import { IntelligenceMaximizationModule } from './analytics/intelligenceMaximizationModule.js';
+import { AnthropicThinkingProtocol } from './analytics/anthropicThinkingProtocol.js';
+class SequentialThinkingServer {
+    thoughtHistory = [];
+    branches = {};
+    availableTools = []; // Will store tools the system knows about
+    toolUsageStats = {};
+    // New analytics and visualization components
+    semanticAnalyzer;
+    contradictionDetector;
+    reflectionEngine;
+    graphRenderer;
+    // New prompt analysis components
+    promptContext;
+    promptAnalyzer;
+    // New intelligence maximization component
+    intelligenceMaximizationModule;
+    // New Anthropic Thinking Protocol component
+    anthropicThinkingProtocol;
+    constructor() {
+        // Default available tool is the sequential thinking itself
+        this.availableTools = ["sequentialthinking"];
+        // Initialize analytics and visualization components
+        this.semanticAnalyzer = new SemanticAnalyzer();
+        this.contradictionDetector = new ContradictionDetector();
+        this.reflectionEngine = new ReflectionEngine();
+        this.graphRenderer = new GraphRenderer();
+        // Initialize prompt analysis components
+        this.promptContext = new PromptContext();
+        this.promptAnalyzer = new PromptAnalyzer(this.promptContext);
+        // Initialize intelligence maximization component
+        this.intelligenceMaximizationModule = new IntelligenceMaximizationModule();
+        // Initialize Anthropic Thinking Protocol component
+        this.anthropicThinkingProtocol = new AnthropicThinkingProtocol();
+        console.error(chalk.cyan('MCP Sequential Thinking Server initialized with advanced intelligence capabilities'));
+        console.error(chalk.magenta('Anthropic Thinking Protocol enabled for enhanced reasoning capabilities'));
+        console.error(chalk.green('Available cognitive architectures: Conceptual Blending Network, Bayesian Cognitive Architecture, Hierarchical Problem Solver'));
+        console.error(chalk.green('Available epistemological frameworks: Empiricism, Rationalism, Constructivism, Critical Rationalism'));
+        console.error(chalk.green('Available metacognitive strategies: Cognitive Decoupling, Metacognitive Questioning, Conceptual Blending Protocol'));
+    }
+    setAvailableTools(tools) {
+        this.availableTools = [...new Set([...this.availableTools, ...tools])];
+    }
+    validateThoughtData(input) {
+        const data = input;
+        if (!data.thought || typeof data.thought !== 'string') {
+            throw new Error('Invalid thought: must be a string');
+        }
+        if (!data.thoughtNumber || typeof data.thoughtNumber !== 'number') {
+            throw new Error('Invalid thoughtNumber: must be a number');
+        }
+        if (!data.totalThoughts || typeof data.totalThoughts !== 'number') {
+            throw new Error('Invalid totalThoughts: must be a number');
+        }
+        if (typeof data.nextThoughtNeeded !== 'boolean') {
+            throw new Error('Invalid nextThoughtNeeded: must be a boolean');
+        }
+        return {
+            thought: data.thought,
+            thoughtNumber: data.thoughtNumber,
+            totalThoughts: data.totalThoughts,
+            nextThoughtNeeded: data.nextThoughtNeeded,
+            isRevision: data.isRevision,
+            revisesThought: data.revisesThought,
+            branchFromThought: data.branchFromThought,
+            branchId: data.branchId,
+            needsMoreThoughts: data.needsMoreThoughts,
+            phase: data.phase,
+            dependencies: data.dependencies,
+            toolsUsed: data.toolsUsed,
+            complexity: data.complexity,
+            status: data.status,
+            quality: data.quality,
+            keywords: data.keywords,
+            insightValue: data.insightValue,
+            classification: data.classification,
+            confidenceScore: data.confidenceScore,
+            evidenceStrength: data.evidenceStrength,
+        };
+    }
+    formatThought(thoughtData) {
+        const { thoughtNumber, totalThoughts, thought, isRevision, revisesThought, branchFromThought, branchId, phase, status, complexity, dependencies, toolsUsed, promptAlignment, intelligenceRecommendations } = thoughtData;
+        // Create a compact header with essential information
+        let header = '';
+        // Add thought type indicator
+        if (isRevision) {
+            header = `🔄 Rev T${thoughtNumber}/${totalThoughts} (rev T${revisesThought})`;
+        }
+        else if (branchFromThought) {
+            header = `🌿 Branch T${thoughtNumber}/${totalThoughts} (from T${branchFromThought})`;
+        }
+        else {
+            header = `💭 T${thoughtNumber}/${totalThoughts}`;
+        }
+        // Add phase and status if available
+        if (phase) {
+            const phaseEmoji = phase === 'Planning' ? '📝' :
+                phase === 'Analysis' ? '🔍' :
+                    phase === 'Execution' ? '⚙️' :
+                        phase === 'Verification' ? '✅' : '';
+            header += ` | ${phaseEmoji}${phase}`;
+        }
+        if (status) {
+            const statusSymbol = status === 'complete' ? '✓' :
+                status === 'needs-revision' ? '⚠️' : '⏳';
+            header += ` | ${statusSymbol}`;
+        }
+        // Add prompt alignment if available (important for reasoning quality)
+        if (promptAlignment !== undefined) {
+            const alignmentSymbol = promptAlignment >= 7 ? '✓' :
+                promptAlignment >= 4 ? '⚠️' : '❌';
+            header += ` | A:${promptAlignment}${alignmentSymbol}`;
+        }
+        // Create the thought content
+        let formattedThought = thought;
+        // Add essential metadata in a compact format
+        let metadata = [];
+        // Add dependencies if they exist
+        if (dependencies && dependencies.length > 0) {
+            metadata.push(`Deps: T${dependencies.join(', T')}`);
+        }
+        // Add tools used if they exist (keep it brief)
+        if (toolsUsed && toolsUsed.length > 0) {
+            metadata.push(`Tools: ${toolsUsed.join(', ')}`);
+        }
+        // Add drift warning if it exists (important for reasoning quality)
+        if (thoughtData.driftWarning) {
+            metadata.push(`Warning: ${thoughtData.driftWarning}`);
+        }
+        // Add metadata to thought if any exists
+        if (metadata.length > 0) {
+            formattedThought += `\n\n${metadata.join(' | ')}`;
+        }
+        // Add only the most critical intelligence recommendations
+        let recommendations = [];
+        // Add cognitive biases (limit to 1 most likely)
+        if (intelligenceRecommendations && intelligenceRecommendations.cognitiveBiases &&
+            intelligenceRecommendations.cognitiveBiases.length > 0) {
+            const topBias = intelligenceRecommendations.cognitiveBiases
+                .sort((a, b) => b.likelihood - a.likelihood)[0];
+            if (topBias.likelihood > 0.7) { // Only show high likelihood biases
+                recommendations.push(`Bias: ${topBias.biasType} - ${topBias.mitigationStrategy}`);
+            }
+        }
+        // Add metacognitive strategy (limit to 1 most relevant)
+        if (intelligenceRecommendations && intelligenceRecommendations.metacognitiveStrategies &&
+            intelligenceRecommendations.metacognitiveStrategies.length > 0) {
+            const topStrategy = intelligenceRecommendations.metacognitiveStrategies[0];
+            recommendations.push(`Strategy: ${topStrategy.strategyName} - ${topStrategy.expectedBenefit}`);
+        }
+        // Add insight prompt (limit to 1)
+        if (intelligenceRecommendations && intelligenceRecommendations.insightGenerationPrompts &&
+            intelligenceRecommendations.insightGenerationPrompts.length > 0) {
+            recommendations.push(`Insight: ${intelligenceRecommendations.insightGenerationPrompts[0]}`);
+        }
+        // Add recommendations to thought if any exist
+        if (recommendations.length > 0) {
+            formattedThought += `\n\nRecommendations:\n• ${recommendations.join('\n• ')}`;
+        }
+        // Create a simpler border
+        const border = '─'.repeat(Math.min(80, Math.max(header.length, 40)));
+        return `
+┌${border}┐
+│ ${header.padEnd(border.length - 2)} │
+├${border}┤
+${formattedThought.split('\n').map(line => `│ ${line.padEnd(border.length - 2)} │`).join('\n')}
+└${border}┘`;
+    }
+    assessThoughtQuality(thought) {
+        // Initialize quality object
+        thought.quality = {
+            coherence: 5,
+            depth: 5,
+            relevance: 5,
+            qualityScore: 5,
+            feedback: []
+        };
+        // Assess coherence based on connection to previous thoughts
+        if (thought.dependencies && thought.dependencies.length > 0) {
+            thought.quality.coherence = Math.min(8, 5 + thought.dependencies.length);
+        }
+        else if (thought.thoughtNumber > 1) {
+            thought.quality.coherence = 3;
+            thought.quality.feedback.push("Consider how this thought connects to previous thinking");
+        }
+        // Assess depth based on length and complexity
+        const wordCount = thought.thought.split(/\s+/).length;
+        if (wordCount < 30) {
+            thought.quality.depth = 3;
+            thought.quality.feedback.push("This thought could be explored in more depth");
+        }
+        else if (wordCount > 100) {
+            thought.quality.depth = 8;
+        }
+        // Assess relevance based on phase appropriateness
+        if (thought.phase === 'Planning' && thought.thoughtNumber > 3) {
+            thought.quality.relevance = 4;
+            thought.quality.feedback.push("Consider moving from planning to execution");
+        }
+        // Calculate overall score
+        thought.quality.qualityScore = Math.round((thought.quality.coherence + thought.quality.depth + thought.quality.relevance) / 3);
+        // Log quality assessment
+        if (thought.quality.feedback.length > 0) {
+            console.error(chalk.cyan('\nThought Quality Feedback:'));
+            thought.quality.feedback.forEach(fb => {
+                console.error(`  • ${fb}`);
+            });
+        }
+        // Set insight value based on quality metrics
+        thought.insightValue = Math.round((thought.quality.depth * 0.4 +
+            thought.quality.coherence * 0.3 +
+            thought.quality.relevance * 0.3) *
+            (thought.dependencies?.length ? 1.2 : 1) // Bonus for connected thoughts
+        );
+    }
+    provideStrategicGuidance(currentThought) {
+        const guidance = [];
+        const progress = currentThought.thoughtNumber / currentThought.totalThoughts;
+        // Check for stagnation (multiple thoughts in same phase)
+        const samePhaseCount = this.thoughtHistory
+            .filter(t => t.phase === currentThought.phase)
+            .length;
+        if (samePhaseCount > 4 && currentThought.phase !== 'Execution') {
+            guidance.push(`Consider transitioning from ${currentThought.phase} to the next phase`);
+        }
+        // Check for excessive revisions
+        const revisionCount = this.thoughtHistory
+            .filter(t => t.isRevision)
+            .length;
+        if (revisionCount > 3) {
+            guidance.push("Multiple revisions detected. Consider whether a different approach is needed");
+        }
+        // Suggest tool usage if none used
+        if (!currentThought.toolsUsed || currentThought.toolsUsed.length === 0) {
+            // Filter out sequentialthinking from available tools
+            const otherTools = this.availableTools.filter(t => t !== "sequentialthinking");
+            if (otherTools.length > 0) {
+                guidance.push(`Consider using available tools: ${otherTools.join(', ')}`);
+            }
+        }
+        // Suggest branching for complex problems with no branches
+        if (Object.keys(this.branches).length === 0 &&
+            (currentThought.complexity === 'complex' || this.thoughtHistory.length > 8)) {
+            guidance.push("For this complex problem, consider exploring alternative approaches through branching");
+        }
+        // Check for phase progression
+        if (progress > 0.75 && currentThought.phase !== 'Verification') {
+            guidance.push("Consider transitioning to the Verification phase to validate your solution");
+        }
+        // Check for thought quality
+        if (currentThought.quality) {
+            if (currentThought.quality.qualityScore < 5) {
+                guidance.push("Consider improving the quality of this thought based on the feedback provided");
+            }
+        }
+        // Check for prompt alignment
+        if (currentThought.promptAlignment !== undefined && currentThought.promptAlignment < 5) {
+            guidance.push("This thought has low alignment with the original prompt. Consider revising to better address the prompt's goals");
+            // Add specific correction suggestions if available
+            if (currentThought.suggestedCorrections && currentThought.suggestedCorrections.length > 0) {
+                currentThought.suggestedCorrections.forEach(correction => {
+                    guidance.push(correction);
+                });
+            }
+        }
+        // Check for prompt drift pattern
+        const recentThoughts = this.thoughtHistory.slice(-3);
+        const driftingThoughts = recentThoughts.filter(t => t.promptAlignment !== undefined && t.promptAlignment < 5);
+        if (driftingThoughts.length >= 2) {
+            guidance.push("Multiple recent thoughts show low prompt alignment. Consider refocusing on the original prompt goals");
+        }
+        // Add intelligence maximization guidance if available
+        if (currentThought.intelligenceRecommendations) {
+            // Add strategy recommendations
+            if (currentThought.intelligenceRecommendations.strategies.length > 0) {
+                const topStrategy = currentThought.intelligenceRecommendations.strategies[0];
+                guidance.push(`Try using the "${topStrategy.strategyName}" strategy: ${topStrategy.description}`);
+            }
+            // Add reasoning type recommendations
+            if (currentThought.intelligenceRecommendations.reasoningTypes.length > 0) {
+                const topReasoningType = currentThought.intelligenceRecommendations.reasoningTypes[0];
+                guidance.push(`Consider using ${topReasoningType.reasoningType} reasoning: ${topReasoningType.description}`);
+            }
+            // Add focus area recommendation
+            if (currentThought.intelligenceRecommendations.focusAreas.length > 0) {
+                guidance.push(`Focus on: ${currentThought.intelligenceRecommendations.focusAreas[0]}`);
+            }
+            // Add pitfall warning
+            if (currentThought.intelligenceRecommendations.potentialPitfalls.length > 0) {
+                guidance.push(`Watch out for: ${currentThought.intelligenceRecommendations.potentialPitfalls[0]}`);
+            }
+            // Add adaptive suggestions
+            if (currentThought.intelligenceRecommendations.adaptiveSuggestions &&
+                currentThought.intelligenceRecommendations.adaptiveSuggestions.length > 0) {
+                guidance.push(...currentThought.intelligenceRecommendations.adaptiveSuggestions.slice(0, 2));
+            }
+            // Add cognitive bias mitigation if high likelihood biases detected
+            if (currentThought.intelligenceRecommendations.cognitiveBiases &&
+                currentThought.intelligenceRecommendations.cognitiveBiases.length > 0) {
+                const highLikelihoodBias = currentThought.intelligenceRecommendations.cognitiveBiases
+                    .find(bias => bias.likelihood > 0.7);
+                if (highLikelihoodBias) {
+                    guidance.push(`Be aware of potential ${highLikelihoodBias.biasType}: ${highLikelihoodBias.mitigationStrategy}`);
+                }
+            }
+        }
+        return guidance;
+    }
+    trackToolUsage(thought) {
+        if (!thought.toolsUsed || thought.toolsUsed.length === 0) {
+            return;
+        }
+        // Update tool usage statistics
+        for (const tool of thought.toolsUsed) {
+            if (!this.toolUsageStats[tool]) {
+                this.toolUsageStats[tool] = {
+                    usageCount: 0,
+                    thoughtsUsedIn: [],
+                    phaseUsage: { 'Planning': 0, 'Analysis': 0, 'Execution': 0, 'Verification': 0 }
+                };
+            }
+            this.toolUsageStats[tool].usageCount++;
+            this.toolUsageStats[tool].thoughtsUsedIn.push(thought.thoughtNumber);
+            if (thought.phase) {
+                this.toolUsageStats[tool].phaseUsage[thought.phase]++;
+            }
+        }
+        // Log tool usage statistics
+        console.error(chalk.cyan('\nTool Usage Statistics:'));
+        for (const [toolName, stats] of Object.entries(this.toolUsageStats)) {
+            console.error(`  ${toolName}: Used ${stats.usageCount} times`);
+            // Show phase distribution
+            const phaseUsage = Object.entries(stats.phaseUsage)
+                .filter(([_, count]) => count > 0)
+                .map(([phase, count]) => `${phase}: ${count}`)
+                .join(', ');
+            if (phaseUsage) {
+                console.error(`    Phase usage: ${phaseUsage}`);
+            }
+            // Show recent thoughts where tool was used
+            const recentThoughts = stats.thoughtsUsedIn.slice(-3);
+            if (recentThoughts.length > 0) {
+                console.error(`    Recent usage in thoughts: T${recentThoughts.join(', T')}`);
+            }
+        }
+    }
+    processThought(input) {
+        try {
+            const validatedInput = this.validateThoughtData(input);
+            // Auto-adjust totalThoughts if needed
+            if (validatedInput.thoughtNumber > validatedInput.totalThoughts) {
+                validatedInput.totalThoughts = validatedInput.thoughtNumber;
+            }
+            // Set a default phase if not provided
+            if (!validatedInput.phase) {
+                const phaseMap = {
+                    1: 'Planning',
+                };
+                validatedInput.phase = phaseMap[validatedInput.thoughtNumber] || 'Execution';
+            }
+            // Enhance thought with semantic analysis
+            validatedInput.vector = this.semanticAnalyzer.buildThoughtVectors(validatedInput);
+            validatedInput.conceptsExtracted = this.semanticAnalyzer.extractConcepts(validatedInput);
+            // Check for contradictions
+            const contradictions = this.contradictionDetector.checkContradictions(validatedInput, this.thoughtHistory);
+            if (contradictions.hasContradictions) {
+                validatedInput.contradictions = contradictions.details;
+                console.error(chalk.yellow('\nPotential contradictions detected:'));
+                contradictions.details.forEach(detail => {
+                    console.error(`  • With thought ${detail.thoughtNumber}: ${detail.explanation}`);
+                });
+            }
+            // Generate reflection prompts
+            validatedInput.reflectionPrompts = this.reflectionEngine.generateReflectionPrompts([
+                ...this.thoughtHistory,
+                validatedInput
+            ]);
+            // Identify assumptions
+            validatedInput.assumptions = this.reflectionEngine.identifyAssumptions(validatedInput);
+            // Analyze prompt alignment if prompt context is initialized
+            if (this.promptContext.isInitialized()) {
+                const promptMetadata = this.promptContext.getMetadata();
+                if (promptMetadata) {
+                    const alignmentData = this.promptAnalyzer.analyzeThoughtAlignment(validatedInput.thought, promptMetadata);
+                    // Add alignment data to thought
+                    validatedInput.promptAlignment = alignmentData.promptAlignment;
+                    validatedInput.promptRelevance = alignmentData.promptRelevance;
+                    validatedInput.driftWarning = alignmentData.driftWarning;
+                    validatedInput.suggestedCorrections = alignmentData.suggestedCorrections;
+                    // Log alignment information
+                    console.error(chalk.cyan('\nPrompt Alignment:'));
+                    console.error(`  Alignment Score: ${alignmentData.promptAlignment}/10`);
+                    if (alignmentData.driftWarning) {
+                        console.error(chalk.yellow(`  Warning: ${alignmentData.driftWarning}`));
+                        if (alignmentData.suggestedCorrections) {
+                            console.error(chalk.yellow('  Suggested Corrections:'));
+                            alignmentData.suggestedCorrections.forEach(correction => {
+                                console.error(`    • ${correction}`);
+                            });
+                        }
+                    }
+                    // Apply Anthropic Thinking Protocol
+                    if (promptMetadata) {
+                        console.error(chalk.magenta('\nApplying Anthropic Thinking Protocol:'));
+                        // Apply the thinking protocol to the thought text
+                        const thinkingProtocolResult = this.anthropicThinkingProtocol.applyThinkingProtocol(validatedInput.thought, promptMetadata);
+                        // Set thinking protocol properties on the thought
+                        validatedInput.rawThinking = thinkingProtocolResult.rawThinking;
+                        validatedInput.structuredThinking = thinkingProtocolResult.structuredThinking;
+                        validatedInput.thinkingProtocolRecommendations = thinkingProtocolResult.adaptiveRecommendations;
+                        // Calculate thinking quality score (0-10) based on structured thinking completeness
+                        const structuredThinking = thinkingProtocolResult.structuredThinking;
+                        let qualityScore = 5; // Default medium score
+                        // Assess quality based on completeness of structured thinking
+                        const hasInitialEngagement = structuredThinking.initialEngagement && structuredThinking.initialEngagement.length > 0;
+                        const hasProblemAnalysis = structuredThinking.problemAnalysis && structuredThinking.problemAnalysis.length > 0;
+                        const hasMultipleHypotheses = structuredThinking.multipleHypotheses && structuredThinking.multipleHypotheses.length > 1;
+                        const hasTestingVerification = structuredThinking.testingAndVerification && structuredThinking.testingAndVerification.length > 0;
+                        const hasKnowledgeSynthesis = structuredThinking.knowledgeSynthesis && structuredThinking.knowledgeSynthesis.length > 0;
+                        // Count quality factors
+                        const qualityFactors = [
+                            hasInitialEngagement,
+                            hasProblemAnalysis,
+                            hasMultipleHypotheses,
+                            hasTestingVerification,
+                            hasKnowledgeSynthesis
+                        ].filter(Boolean).length;
+                        // Calculate score based on quality factors (0-10 scale)
+                        qualityScore = Math.min(10, Math.max(1, 2 * qualityFactors));
+                        validatedInput.thinkingQualityScore = qualityScore;
+                        // Log thinking protocol information
+                        console.error(chalk.cyan('  Raw Thinking Extracted:'), thinkingProtocolResult.rawThinking ? 'Yes' : 'No');
+                        console.error(chalk.cyan('  Structured Thinking Components:'));
+                        console.error(`    Initial Engagement: ${hasInitialEngagement ? '✓' : '✗'}`);
+                        console.error(`    Problem Analysis: ${hasProblemAnalysis ? '✓' : '✗'}`);
+                        console.error(`    Multiple Hypotheses: ${hasMultipleHypotheses ? '✓' : '✗'} (${structuredThinking.multipleHypotheses.length})`);
+                        console.error(`    Testing & Verification: ${hasTestingVerification ? '✓' : '✗'}`);
+                        console.error(`    Knowledge Synthesis: ${hasKnowledgeSynthesis ? '✓' : '✗'}`);
+                        // Log thinking quality score
+                        console.error(chalk.magenta(`  Thinking Quality Score: ${qualityScore}/10`));
+                        // Log recommendations if available
+                        if (thinkingProtocolResult.adaptiveRecommendations.length > 0) {
+                            console.error(chalk.cyan('  Thinking Protocol Recommendations:'));
+                            thinkingProtocolResult.adaptiveRecommendations.forEach(recommendation => {
+                                console.error(`    • ${recommendation}`);
+                            });
+                        }
+                    }
+                    // Generate intelligence maximization recommendations
+                    if (promptMetadata) {
+                        validatedInput.intelligenceRecommendations = this.intelligenceMaximizationModule.generateRecommendations(promptMetadata, validatedInput.thoughtNumber, validatedInput.totalThoughts, validatedInput.phase);
+                    }
+                    // After generating intelligenceRecommendations, extract and assign the new fields
+                    if (validatedInput.intelligenceRecommendations) {
+                        // Extract cognitive architectures if available
+                        if (validatedInput.intelligenceRecommendations.cognitiveArchitectures) {
+                            validatedInput.cognitiveArchitectures =
+                                validatedInput.intelligenceRecommendations.cognitiveArchitectures;
+                        }
+                        // Extract epistemological frameworks if available
+                        if (validatedInput.intelligenceRecommendations.epistemologicalFrameworks) {
+                            validatedInput.epistemologicalFrameworks =
+                                validatedInput.intelligenceRecommendations.epistemologicalFrameworks;
+                        }
+                        // Extract advanced metacognitive strategies if available
+                        if (validatedInput.intelligenceRecommendations.advancedMetacognitiveStrategies) {
+                            validatedInput.advancedMetacognitiveStrategies =
+                                validatedInput.intelligenceRecommendations.advancedMetacognitiveStrategies;
+                        }
+                        // Extract conceptual blending if available
+                        if (validatedInput.intelligenceRecommendations.conceptualBlending) {
+                            validatedInput.conceptualBlending =
+                                validatedInput.intelligenceRecommendations.conceptualBlending;
+                        }
+                        // Extract dialectical reasoning if available
+                        if (validatedInput.intelligenceRecommendations.dialecticalReasoning) {
+                            validatedInput.dialecticalReasoning =
+                                validatedInput.intelligenceRecommendations.dialecticalReasoning;
+                        }
+                        // Extract adaptive learning path if available
+                        if (validatedInput.intelligenceRecommendations.adaptiveLearningPath) {
+                            validatedInput.adaptiveLearningPath =
+                                validatedInput.intelligenceRecommendations.adaptiveLearningPath;
+                        }
+                        // Log advanced intelligence information
+                        console.error(chalk.cyan('\nAdvanced Intelligence Features:'));
+                        if (validatedInput.cognitiveArchitectures) {
+                            console.error(chalk.green('  Cognitive Architectures:'), validatedInput.cognitiveArchitectures.map(a => a.architectureName).join(', '));
+                        }
+                        if (validatedInput.epistemologicalFrameworks) {
+                            console.error(chalk.green('  Epistemological Frameworks:'), validatedInput.epistemologicalFrameworks.map(f => f.frameworkName).join(', '));
+                        }
+                        if (validatedInput.advancedMetacognitiveStrategies) {
+                            console.error(chalk.green('  Advanced Metacognitive Strategies:'), validatedInput.advancedMetacognitiveStrategies.map(s => s.strategyName).join(', '));
+                        }
+                    }
+                    // Log intelligence maximization information
+                    console.error(chalk.cyan('\nIntelligence Maximization:'));
+                    // Only log if intelligenceRecommendations is defined
+                    if (validatedInput.intelligenceRecommendations) {
+                        // Log recommended strategies
+                        if (validatedInput.intelligenceRecommendations.strategies.length > 0) {
+                            console.error(chalk.green('  Recommended Strategies:'));
+                            validatedInput.intelligenceRecommendations.strategies.forEach(strategy => {
+                                console.error(`    • ${strategy.strategyName}: ${strategy.description}`);
+                                console.error(`      Reason: ${strategy.reasonForRecommendation}`);
+                            });
+                        }
+                        // Log recommended reasoning types
+                        if (validatedInput.intelligenceRecommendations.reasoningTypes.length > 0) {
+                            console.error(chalk.green('  Recommended Reasoning Types:'));
+                            validatedInput.intelligenceRecommendations.reasoningTypes.forEach(reasoningType => {
+                                console.error(`    • ${reasoningType.reasoningType}: ${reasoningType.description}`);
+                            });
+                        }
+                        // Log complexity estimation
+                        const complexityEstimation = validatedInput.intelligenceRecommendations.complexityEstimation;
+                        console.error(chalk.green('  Complexity Estimation:'));
+                        console.error(`    Overall: ${complexityEstimation.overallComplexity}`);
+                        console.error(`    Recommended Thoughts: ${complexityEstimation.recommendedThoughtCount}`);
+                        // Log focus areas
+                        if (validatedInput.intelligenceRecommendations.focusAreas.length > 0) {
+                            console.error(chalk.green('  Focus Areas:'));
+                            validatedInput.intelligenceRecommendations.focusAreas.forEach(area => {
+                                console.error(`    • ${area}`);
+                            });
+                        }
+                        // Log potential pitfalls
+                        if (validatedInput.intelligenceRecommendations.potentialPitfalls.length > 0) {
+                            console.error(chalk.yellow('  Potential Pitfalls:'));
+                            validatedInput.intelligenceRecommendations.potentialPitfalls.forEach(pitfall => {
+                                console.error(`    • ${pitfall}`);
+                            });
+                        }
+                        // Adjust totalThoughts based on complexity estimation if needed
+                        if (complexityEstimation.recommendedThoughtCount > validatedInput.totalThoughts) {
+                            validatedInput.totalThoughts = complexityEstimation.recommendedThoughtCount;
+                            console.error(chalk.cyan(`  Adjusting total thoughts to ${validatedInput.totalThoughts} based on complexity estimation`));
+                        }
+                    }
+                }
+            }
+            // Add to thought history
+            this.thoughtHistory.push(validatedInput);
+            // Handle branching
+            if (validatedInput.branchFromThought && validatedInput.branchId) {
+                if (!this.branches[validatedInput.branchId]) {
+                    this.branches[validatedInput.branchId] = [];
+                }
+                this.branches[validatedInput.branchId].push(validatedInput);
+            }
+            // Generate visualizations
+            const dependencyGraph = this.graphRenderer.generateDependencyGraph(this.thoughtHistory);
+            console.error(dependencyGraph);
+            const conceptMap = this.graphRenderer.generateConceptMap(this.thoughtHistory);
+            console.error(conceptMap);
+            const timeline = this.graphRenderer.generateTimelineView(this.thoughtHistory);
+            console.error(timeline);
+            // Generate prompt-centered visualizations if prompt context is initialized
+            if (this.promptContext.isInitialized()) {
+                const promptMetadata = this.promptContext.getMetadata();
+                if (promptMetadata) {
+                    // Generate prompt alignment view
+                    const promptAlignmentView = this.graphRenderer.generatePromptAlignmentView(this.thoughtHistory, promptMetadata);
+                    console.error(promptAlignmentView);
+                    // Generate prompt progress view
+                    const promptProgressView = this.graphRenderer.generatePromptProgressView(this.thoughtHistory, promptMetadata);
+                    console.error(promptProgressView);
+                }
+            }
+            // Generate new advanced visualizations
+            if (validatedInput.intelligenceRecommendations) {
+                // Generate cognitive model visualization if available
+                if (validatedInput.intelligenceRecommendations.cognitiveModels &&
+                    validatedInput.intelligenceRecommendations.cognitiveModels.length > 0) {
+                    const cognitiveModelViz = this.graphRenderer.generateCognitiveModelVisualization(this.thoughtHistory, validatedInput.intelligenceRecommendations.cognitiveModels);
+                    console.error(cognitiveModelViz);
+                }
+                // Generate reasoning framework visualization if available
+                if (validatedInput.intelligenceRecommendations.reasoningFrameworks &&
+                    validatedInput.intelligenceRecommendations.reasoningFrameworks.length > 0) {
+                    const reasoningFrameworkViz = this.graphRenderer.generateReasoningFrameworkVisualization(this.thoughtHistory, validatedInput.intelligenceRecommendations.reasoningFrameworks);
+                    console.error(reasoningFrameworkViz);
+                }
+                // Generate intelligence dashboard
+                // Get metadata and ensure it's not null
+                const metadata = this.promptContext.isInitialized() ? this.promptContext.getMetadata() || undefined : undefined;
+                const intelligenceDashboard = this.graphRenderer.generateIntelligenceDashboard(this.thoughtHistory, metadata, validatedInput.intelligenceRecommendations);
+                console.error(intelligenceDashboard);
+            }
+            // Calculate progress
+            const progress = (validatedInput.thoughtNumber / validatedInput.totalThoughts) * 100;
+            const progressBar = this.createProgressBar(progress);
+            console.error(progressBar);
+            // Track tool usage
+            this.trackToolUsage(validatedInput);
+            // Generate strategic guidance
+            const guidance = this.provideStrategicGuidance(validatedInput);
+            // Add guidance to console output
+            if (guidance.length > 0) {
+                console.error(chalk.yellow('\nStrategic Guidance:'));
+                guidance.forEach(g => console.error(`  • ${g}`));
+            }
+            // Return enhanced response
+            return {
+                content: [{
+                        type: "text",
+                        text: JSON.stringify({
+                            thoughtNumber: validatedInput.thoughtNumber,
+                            totalThoughts: validatedInput.totalThoughts,
+                            nextThoughtNeeded: validatedInput.nextThoughtNeeded,
+                            branches: Object.keys(this.branches),
+                            phase: validatedInput.phase,
+                            complexity: validatedInput.complexity || this.estimateComplexity(),
+                            progress: `${Math.round(progress)}%`,
+                            // Include only the most essential guidance
+                            strategicGuidance: guidance.slice(0, 3), // Limit to top 3 guidance items
+                            // Include only essential analytics data
+                            promptAlignment: validatedInput.promptAlignment,
+                            driftWarning: validatedInput.driftWarning,
+                            // Include only the most critical intelligence recommendations
+                            recommendations: validatedInput.intelligenceRecommendations ? {
+                                strategies: validatedInput.intelligenceRecommendations.strategies?.slice(0, 1),
+                                reasoningTypes: validatedInput.intelligenceRecommendations.reasoningTypes?.slice(0, 1),
+                                focusAreas: validatedInput.intelligenceRecommendations.focusAreas?.slice(0, 1),
+                                potentialPitfalls: validatedInput.intelligenceRecommendations.potentialPitfalls?.slice(0, 1),
+                                cognitiveBiases: validatedInput.intelligenceRecommendations?.cognitiveBiases?.slice(0, 1),
+                                metacognitiveStrategies: validatedInput.intelligenceRecommendations?.metacognitiveStrategies?.slice(0, 1),
+                                insightPrompts: validatedInput.intelligenceRecommendations?.insightGenerationPrompts?.slice(0, 1)
+                            } : undefined,
+                            // Include thinking protocol information
+                            thinkingQualityScore: validatedInput.thinkingQualityScore,
+                            thinkingRecommendations: validatedInput.thinkingProtocolRecommendations?.slice(0, 2) // Limit to top 2
+                        }, null, 2)
+                    }]
+            };
+        }
+        catch (error) {
+            return {
+                content: [{
+                        type: "text",
+                        text: JSON.stringify({
+                            error: error instanceof Error ? error.message : String(error),
+                            status: 'failed'
+                        }, null, 2)
+                    }],
+                isError: true
+            };
+        }
+    }
+    createProgressBar(percentage) {
+        const width = 30; // Reduced from 50
+        const completed = Math.floor(width * (percentage / 100));
+        const remaining = width - completed;
+        const bar = '█'.repeat(completed) + '░'.repeat(remaining);
+        return `\n${chalk.cyan('Progress:')} [${chalk.green(bar)}] ${Math.round(percentage)}%`;
+    }
+    generateDependencyGraph() {
+        // Skip if we have fewer than 2 thoughts
+        if (this.thoughtHistory.length < 2) {
+            return '';
+        }
+        const graphLines = [];
+        graphLines.push(chalk.cyan('\n=== Thought Dependency Graph ==='));
+        // Create a map for quick lookup
+        const thoughtMap = new Map(this.thoughtHistory.map(t => [t.thoughtNumber, t]));
+        // Phase colors
+        const phaseColors = {
+            'Planning': chalk.blue,
+            'Analysis': chalk.yellow,
+            'Execution': chalk.green,
+            'Verification': chalk.magenta,
+        };
+        // Build adjacency list
+        const adjacencyList = {};
+        for (const thought of this.thoughtHistory) {
+            if (thought.dependencies && thought.dependencies.length > 0) {
+                // Create reversed dependencies (for drawing arrows from dependencies to current thought)
+                for (const dep of thought.dependencies) {
+                    if (!adjacencyList[dep]) {
+                        adjacencyList[dep] = [];
+                    }
+                    adjacencyList[dep].push(thought.thoughtNumber);
+                }
+            }
+        }
+        // Generate ASCII representation of graph
+        for (let i = 1; i <= this.thoughtHistory.length; i++) {
+            const thought = thoughtMap.get(i);
+            if (!thought)
+                continue;
+            // Skip thoughts that are revisions
+            if (thought.isRevision)
+                continue;
+            const phase = thought.phase || 'Execution';
+            const colorFn = phaseColors[phase] || chalk.white;
+            // Get connections
+            const connections = adjacencyList[i] || [];
+            // Format thought node
+            const nodeLabel = `T${i}`;
+            const nodeWithPhase = `${nodeLabel}(${phase[0]})`;
+            const qualityIndicator = thought.quality ?
+                ` [Q:${thought.quality.qualityScore}]` : '';
+            graphLines.push(colorFn(`${nodeWithPhase.padEnd(10)}${qualityIndicator} ${connections.length ? '→' : ''} ${connections.map(c => `T${c}`).join(', ')}`));
+        }
+        // Add branch information
+        if (Object.keys(this.branches).length > 0) {
+            graphLines.push(chalk.yellow('\nBranches:'));
+            for (const [branchId, thoughts] of Object.entries(this.branches)) {
+                const branchInfo = thoughts.map(t => {
+                    const phase = t.phase || 'Execution';
+                    const colorFn = phaseColors[phase] || chalk.white;
+                    return colorFn(`T${t.thoughtNumber}(${phase[0]})`);
+                }).join(' → ');
+                graphLines.push(`  ${branchId}: ${branchInfo}`);
+            }
+        }
+        // Add legend
+        graphLines.push('\nLegend:');
+        Object.entries(phaseColors).forEach(([phase, colorFn]) => {
+            graphLines.push(`  ${colorFn(`${phase[0]}`)} - ${phase}`);
+        });
+        return graphLines.join('\n') + '\n';
+    }
+    getRecentThoughts(count) {
+        return this.thoughtHistory
+            .slice(-count)
+            .map(t => ({
+            number: t.thoughtNumber,
+            summary: t.thought.length > 50 ?
+                t.thought.substring(0, 50) + '...' :
+                t.thought
+        }));
+    }
+    estimateComplexity() {
+        // Estimate complexity based on thought history patterns
+        const thoughtCount = this.thoughtHistory.length;
+        const revisionCount = this.thoughtHistory.filter(t => t.isRevision).length;
+        const branchCount = Object.keys(this.branches).length;
+        if (thoughtCount > 10 || branchCount > 2) {
+            return 'complex';
+        }
+        else if (thoughtCount > 5 || revisionCount > 1 || branchCount > 0) {
+            return 'medium';
+        }
+        return 'simple';
+    }
+    suggestNextPhase(currentThought) {
+        // Suggest next phase based on current phase and progress
+        const { phase, thoughtNumber, totalThoughts } = currentThought;
+        const progress = thoughtNumber / totalThoughts;
+        if (phase === 'Planning' && progress > 0.2) {
+            return 'Analysis';
+        }
+        else if (phase === 'Analysis' && progress > 0.4) {
+            return 'Execution';
+        }
+        else if (phase === 'Execution' && progress > 0.8) {
+            return 'Verification';
+        }
+        return phase || 'Execution';
+    }
+    detectSemanticRelationships(newThought) {
+        // Skip if we have fewer than 2 thoughts
+        if (this.thoughtHistory.length < 2)
+            return;
+        // Extract keywords from the current thought
+        const keywords = this.extractKeywords(newThought.thought);
+        newThought.keywords = keywords;
+        // Look for semantic connections with previous thoughts
+        const semanticConnections = [];
+        for (let i = 0; i < this.thoughtHistory.length; i++) {
+            const previousThought = this.thoughtHistory[i];
+            if (!previousThought.keywords)
+                continue;
+            // Check for keyword overlap
+            const overlap = previousThought.keywords.filter(kw => keywords.includes(kw));
+            // If significant overlap found, add as implicit dependency
+            if (overlap.length >= 2 && !newThought.dependencies?.includes(previousThought.thoughtNumber)) {
+                semanticConnections.push(previousThought.thoughtNumber);
+            }
+        }
+        // Add semantic connections to dependencies
+        if (semanticConnections.length > 0) {
+            newThought.dependencies = [
+                ...(newThought.dependencies || []),
+                ...semanticConnections
+            ];
+            console.error(chalk.magenta(`\nDetected semantic connections with thoughts: ${semanticConnections.join(', ')}`));
+        }
+    }
+    extractKeywords(text) {
+        // Simple keyword extraction
+        // In a real implementation, this could use NLP techniques
+        const words = text.toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .split(/\s+/)
+            .filter(word => word.length > 4) // Filter out short words
+            .filter(word => !['about', 'above', 'across', 'after', 'again'].includes(word)); // Filter common stop words
+        // Count word frequency
+        const wordCounts = words.reduce((acc, word) => {
+            acc[word] = (acc[word] || 0) + 1;
+            return acc;
+        }, {});
+        // Return top 5-10 keywords by frequency
+        return Object.entries(wordCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(([word]) => word);
+    }
+    /**
+     * Calculates the coverage of prompt goals by the thoughts
+     */
+    calculateGoalCoverage() {
+        if (!this.promptContext.isInitialized() || !this.promptContext.getMetadata()) {
+            return {};
+        }
+        const promptMetadata = this.promptContext.getMetadata();
+        const coverage = {};
+        promptMetadata.goals.forEach((goal, index) => {
+            // Calculate coverage for this goal based on thought relevance
+            const relevantThoughts = this.thoughtHistory.filter(t => t.promptRelevance &&
+                t.promptRelevance[`goal_${index}`] !== undefined &&
+                t.promptRelevance[`goal_${index}`] > 0.5);
+            const coveragePercentage = Math.min(100, Math.round((relevantThoughts.length / Math.max(2, promptMetadata.complexity === 'simple' ? 3 : promptMetadata.complexity === 'medium' ? 5 : 8)) * 100));
+            coverage[`goal_${index}`] = coveragePercentage;
+        });
+        return coverage;
+    }
+    /**
+     * Calculates the trend of prompt alignment scores
+     */
+    calculateAlignmentTrend() {
+        // Get thoughts with alignment scores
+        const alignedThoughts = this.thoughtHistory
+            .filter(t => t.promptAlignment !== undefined)
+            .sort((a, b) => a.thoughtNumber - b.thoughtNumber);
+        if (alignedThoughts.length < 3) {
+            return 'Insufficient data';
+        }
+        // Get the last 5 thoughts (or fewer if not available)
+        const recentThoughts = alignedThoughts.slice(-5);
+        // Calculate trend
+        const firstScore = recentThoughts[0].promptAlignment;
+        const lastScore = recentThoughts[recentThoughts.length - 1].promptAlignment;
+        const difference = lastScore - firstScore;
+        if (difference > 1) {
+            return 'Improving';
+        }
+        else if (difference < -1) {
+            return 'Declining';
+        }
+        else {
+            return 'Stable';
+        }
+    }
+    /**
+     * Calculates the overall progress based on various metrics
+     */
+    calculateOverallProgress() {
+        if (!this.promptContext.isInitialized() || !this.promptContext.getMetadata() || this.thoughtHistory.length === 0) {
+            return 0;
+        }
+        const promptMetadata = this.promptContext.getMetadata();
+        // Get the latest thought to determine current progress
+        const latestThought = this.thoughtHistory.reduce((latest, current) => current.thoughtNumber > latest.thoughtNumber ? current : latest, this.thoughtHistory[0]);
+        // Calculate progress percentage based on thought numbers
+        const thoughtProgress = Math.min(100, (latestThought.thoughtNumber / latestThought.totalThoughts) * 100);
+        // Calculate average alignment score (0-10)
+        const alignmentScores = this.thoughtHistory
+            .filter(t => t.promptAlignment !== undefined)
+            .map(t => t.promptAlignment);
+        const avgAlignment = alignmentScores.length > 0
+            ? alignmentScores.reduce((sum, score) => sum + score, 0) / alignmentScores.length
+            : 5; // Default to middle if no alignment data
+        // Calculate goal coverage (percentage of goals with at least one relevant thought)
+        const goalCoverage = Object.values(this.calculateGoalCoverage())
+            .reduce((sum, coverage) => sum + coverage, 0) /
+            Math.max(1, Object.keys(this.calculateGoalCoverage()).length);
+        // Calculate phase progress (weight later phases more heavily)
+        const phaseWeights = {
+            'Planning': 0.1,
+            'Analysis': 0.3,
+            'Execution': 0.5,
+            'Verification': 0.9
+        };
+        const latestPhase = latestThought.phase || 'Execution';
+        const phaseProgress = (phaseWeights[latestPhase] || 0.5) * 100;
+        // Combine all factors with weights
+        const weightedProgress = (thoughtProgress * 0.3) +
+            (avgAlignment * 10 * 0.3) +
+            (goalCoverage * 0.3) +
+            (phaseProgress * 0.1);
+        return Math.round(weightedProgress);
+    }
+    /**
+     * Estimates the number of remaining thoughts needed
+     */
+    estimateRemainingThoughts() {
+        if (!this.promptContext.isInitialized() || !this.promptContext.getMetadata() || this.thoughtHistory.length === 0) {
+            return 0;
+        }
+        const promptMetadata = this.promptContext.getMetadata();
+        // Get the latest thought
+        const latestThought = this.thoughtHistory.reduce((latest, current) => current.thoughtNumber > latest.thoughtNumber ? current : latest, this.thoughtHistory[0]);
+        // Calculate overall progress
+        const progress = this.calculateOverallProgress();
+        // If progress is very low, estimate based on complexity
+        if (progress < 10) {
+            return promptMetadata.complexity === 'simple' ? 5 :
+                promptMetadata.complexity === 'medium' ? 8 : 12;
+        }
+        // Estimate remaining thoughts based on current progress and total thoughts
+        const estimatedTotal = Math.ceil((latestThought.thoughtNumber * 100) / Math.max(1, progress));
+        const remainingThoughts = Math.max(0, estimatedTotal - latestThought.thoughtNumber);
+        return remainingThoughts;
+    }
+    /**
+     * Initializes the prompt context with a new prompt
+     * @param prompt The user's original prompt
+     */
+    initializePromptContext(prompt) {
+        this.promptContext.initializeWithPrompt(prompt, this.promptAnalyzer);
+        console.error(chalk.cyan('\nPrompt Analysis:'));
+        const metadata = this.promptContext.getMetadata();
+        if (metadata) {
+            console.error(`  Goals: ${metadata.goals.join(', ')}`);
+            console.error(`  Constraints: ${metadata.constraints.join(', ')}`);
+            console.error(`  Domains: ${metadata.domains.join(', ')}`);
+            console.error(`  Task Type: ${metadata.taskType}`);
+            console.error(`  Complexity: ${metadata.complexity}`);
+            console.error(`  Priority: ${metadata.priority}`);
+            console.error(`  Keywords: ${metadata.keywords.join(', ')}`);
+        }
+    }
+}
+const SEQUENTIAL_THINKING_TOOL = {
+    name: "sequentialthinking",
+    description: `A powerful tool for dynamic and reflective problem-solving through structured thoughts.
+This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
+Each thought can build on, question, or revise previous insights as understanding deepens.
+
+When to use this tool:
+- Breaking down complex problems into steps
+- Planning and design with room for revision
+- Analysis that might need course correction
+- Problems where the full scope might not be clear initially
+- Multi-step solutions requiring maintenance of context
+- Filtering out irrelevant information
+- Tasks that benefit from metacognition (thinking about thinking)
+
+Key features:
+- Adaptive: Adjusts total_thoughts as needed during problem-solving
+- Reflective: Allows questioning and revising previous thoughts
+- Extensible: Supports adding thoughts even after reaching what seemed like the end
+- Flexible: Supports uncertainty and alternative approaches
+- Non-linear: Enables branching and backtracking when helpful
+- Structured: Divides thinking into phases (Planning, Analysis, Execution, Verification)
+- Meta-cognitive: Tracks dependencies between thoughts and complexity
+- Tool-aware: Can incorporate other tools in the thinking process
+
+Parameters explained:
+- thought: Your current thinking step
+- next_thought_needed: True if more thinking is required
+- thought_number: Current number in sequence
+- total_thoughts: Current estimate of thoughts needed (adaptable)
+- is_revision: Boolean indicating if this thought revises previous thinking
+- revises_thought: If revising, which thought number is being reconsidered
+- branch_from_thought: If branching, which thought number is the branching point
+- branch_id: Identifier for the current branch (if any)
+- needs_more_thoughts: If reaching end but realizing more thoughts needed
+- phase: Current thinking phase (Planning, Analysis, Execution, Verification)
+- dependencies: Thought numbers this thought depends on
+- tools_used: Names of tools used in this thought
+- complexity: Estimated complexity of the task (simple, medium, complex)
+- status: Status of this thought (complete, in-progress, needs-revision)
+
+Recommended approach:
+1. Start with a planning phase to assess the task and break it down
+2. Use about 8-12 thoughts for complex problems, 5-8 for medium, 3-5 for simple
+3. Focus on a single sub-task or idea in each thought
+4. Explicitly connect thoughts through dependencies
+5. Track which tools were used in each thought
+6. Revise thoughts when necessary
+7. Branch only when exploring truly different approaches
+8. End with verification to ensure solution quality
+9. Set next_thought_needed to false only when truly complete`,
+    inputSchema: {
+        type: "object",
+        properties: {
+            thought: {
+                type: "string",
+                description: "Your current thinking step"
+            },
+            nextThoughtNeeded: {
+                type: "boolean",
+                description: "Whether another thought step is needed"
+            },
+            thoughtNumber: {
+                type: "integer",
+                description: "Current thought number",
+                minimum: 1
+            },
+            totalThoughts: {
+                type: "integer",
+                description: "Estimated total thoughts needed",
+                minimum: 1
+            },
+            isRevision: {
+                type: "boolean",
+                description: "Whether this revises previous thinking"
+            },
+            revisesThought: {
+                type: "integer",
+                description: "Which thought is being reconsidered",
+                minimum: 1
+            },
+            branchFromThought: {
+                type: "integer",
+                description: "Branching point thought number",
+                minimum: 1
+            },
+            branchId: {
+                type: "string",
+                description: "Branch identifier"
+            },
+            needsMoreThoughts: {
+                type: "boolean",
+                description: "If more thoughts are needed"
+            },
+            phase: {
+                type: "string",
+                description: "Current thinking phase",
+                enum: ["Planning", "Analysis", "Execution", "Verification"]
+            },
+            dependencies: {
+                type: "array",
+                items: {
+                    type: "integer"
+                },
+                description: "Thought numbers this thought depends on"
+            },
+            toolsUsed: {
+                type: "array",
+                items: {
+                    type: "string"
+                },
+                description: "Names of tools used in this thought"
+            },
+            complexity: {
+                type: "string",
+                description: "Estimated complexity of the task",
+                enum: ["simple", "medium", "complex"]
+            },
+            status: {
+                type: "string",
+                description: "Status of this thought",
+                enum: ["complete", "in-progress", "needs-revision"]
+            }
+        },
+        required: ["thought", "nextThoughtNeeded", "thoughtNumber", "totalThoughts"]
+    }
+};
+const server = new Server({
+    name: "sequential-thinking-server",
+    version: "0.3.0",
+}, {
+    capabilities: {
+        tools: {},
+    },
+});
+const thinkingServer = new SequentialThinkingServer();
+server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+    // Store the tools available in the response for later reference
+    const response = { tools: [SEQUENTIAL_THINKING_TOOL] };
+    // Extract and store tool names for awareness
+    if (response && response.tools) {
+        thinkingServer.setAvailableTools(response.tools.map(tool => tool.name));
+    }
+    return response;
+});
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    if (request.params.name === "sequentialthinking") {
+        // Extract the thought data
+        const thoughtData = request.params.arguments;
+        // Initialize prompt context with the first thought
+        if (thoughtData && thoughtData.thoughtNumber === 1) {
+            thinkingServer.initializePromptContext(thoughtData.thought);
+        }
+        return thinkingServer.processThought(request.params.arguments);
+    }
+    return {
+        content: [{
+                type: "text",
+                text: `Unknown tool: ${request.params.name}`
+            }],
+        isError: true
+    };
+});
+async function runServer() {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Sequential Thinking MCP Server running on stdio");
+}
+runServer().catch((error) => {
+    console.error("Fatal error running server:", error);
+    process.exit(1);
+});

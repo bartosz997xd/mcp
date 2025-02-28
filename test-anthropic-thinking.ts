@@ -26,13 +26,27 @@ This will allow for better structured thinking and improved reasoning.
 
 // Sample prompt metadata
 const promptMetadata = {
-  taskType: 'analytical',
-  complexity: 'complex',
+  originalPrompt: 'Implement the Anthropic Thinking Protocol to enhance reasoning capabilities',
+  taskType: 'analytical' as 'analytical',
+  complexity: 'complex' as 'complex',
   goals: ['Implement Anthropic Thinking Protocol', 'Enhance reasoning capabilities'],
   constraints: ['Must be compatible with existing system'],
   domains: ['AI', 'Reasoning', 'Cognitive Science'],
-  priority: 'high',
-  keywords: ['thinking', 'protocol', 'reasoning', 'anthropic']
+  priority: 'high' as 'high', // Type assertion to ensure it's the literal type
+  keywords: ['thinking', 'protocol', 'reasoning', 'anthropic'],
+  entities: ['Anthropic', 'Thinking Protocol'],
+  sentiment: {
+    sentiment: 'neutral' as 'neutral',
+    intensity: 0.5,
+    emotionalTone: ['analytical'],
+    urgency: 'medium' as 'medium'
+  },
+  intent: {
+    primaryIntent: 'create_content',
+    secondaryIntents: ['improve_content'],
+    confidence: 0.8,
+    actionOriented: true
+  }
 };
 
 // Create instances of required components

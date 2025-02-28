@@ -15,6 +15,7 @@ import { ReflectionEngine } from './analytics/reflectionEngine.js';
 import { GraphRenderer } from './visualization/graphRenderer.js';
 import { PromptAnalyzer, PromptContext } from './analytics/promptAnalyzer.js';
 import { IntelligenceMaximizationModule, IntelligenceMaximizationRecommendations } from './analytics/intelligenceMaximizationModule.js';
+import { AnthropicThinkingProtocol } from './analytics/anthropicThinkingProtocol.js';
 import { ThoughtData, CognitiveArchitecture, EpistemologicalFramework, AdvancedMetacognitiveStrategy } from './types/ThoughtData.js';
 
 // Add type for tool usage statistics
@@ -42,6 +43,9 @@ class SequentialThinkingServer {
   
   // New intelligence maximization component
   private intelligenceMaximizationModule: IntelligenceMaximizationModule;
+  
+  // New Anthropic Thinking Protocol component
+  private anthropicThinkingProtocol: AnthropicThinkingProtocol;
 
   constructor() {
     // Default available tool is the sequential thinking itself
