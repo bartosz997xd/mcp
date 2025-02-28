@@ -1,5 +1,6 @@
 // Import the intelligence maximization interfaces
 import { IntelligenceMaximizationRecommendations } from '../analytics/intelligenceMaximizationModule.js';
+import { ThinkingProcess } from '../analytics/anthropicThinkingProtocol.js';
 
 // Define interfaces for advanced intelligence features
 export interface CognitiveArchitecture {
@@ -95,4 +96,10 @@ export interface ThoughtData {
       estimatedThoughtCount: number;
     }>;
   };
+  
+  // Anthropic Thinking Protocol properties
+  rawThinking?: string; // Raw thinking extracted from thought
+  structuredThinking?: ThinkingProcess; // Structured thinking process
+  thinkingProtocolRecommendations?: string[]; // Recommendations from thinking protocol
+  thinkingQualityScore?: number; // 0-10 score of thinking quality
 } 
