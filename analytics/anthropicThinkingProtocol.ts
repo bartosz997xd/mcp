@@ -44,17 +44,24 @@ export class AnthropicThinkingProtocol {
     // Structure the thinking process
     const structuredThinking = this.structureThinkingProcess(rawThinking || thoughtText);
     
+    // Analyze thinking quality
+    const qualityAnalysis = this.analyzeThinkingQuality(structuredThinking);
+    
     // Generate enhanced thought based on structured thinking
     const enhancedThought = this.generateEnhancedThought(structuredThinking, thoughtText);
     
     // Generate adaptive recommendations
-    const adaptiveRecommendations = this.generateAdaptiveRecommendations(structuredThinking, promptMetadata);
+    const adaptiveRecommendations = [
+      ...this.generateAdaptiveRecommendations(structuredThinking, promptMetadata),
+      ...qualityAnalysis.recommendations
+    ];
     
     return {
       rawThinking: rawThinking || '',
       structuredThinking,
       enhancedThought,
-      adaptiveRecommendations
+      adaptiveRecommendations,
+      thinkingQualityScore: qualityAnalysis.qualityScore
     };
   }
 
@@ -329,6 +336,104 @@ export class AnthropicThinkingProtocol {
    * @param promptMetadata The prompt metadata for context
    * @returns Array of adaptive recommendations
    */
+  /**
+   * Analyzes the quality of the thinking process
+   * @param structuredThinking The structured thinking process
+   * @returns Quality analysis with score and recommendations
+   */
+  private analyzeThinkingQuality(structuredThinking: ThinkingProcess): { qualityScore: number; recommendations: string[] } {
+    const recommendations: string[] = [];
+    let qualityScore = 0.5; // Default medium quality
+    
+    // Check for comprehensive thinking elements
+    const presentElements = [
+      !!structuredThinking.initialEngagement,
+      !!structuredThinking.problemAnalysis,
+      structuredThinking.multipleHypotheses.length > 0,
+      !!structuredThinking.naturalDiscoveryFlow,
+      !!structuredThinking.testingAndVerification,
+      !!structuredThinking.knowledgeSynthesis,
+      !!structuredThinking.patternRecognitionAnalysis,
+      !!structuredThinking.recursiveThinking,
+      !!structuredThinking.systematicVerification,
+      !!structuredThinking.errorPrevention,
+      !!structuredThinking.qualityMetrics,
+      !!structuredThinking.domainIntegration,
+      !!structuredThinking.strategicMetaCognition,
+      !!structuredThinking.synthesisApproach,
+      structuredThinking.naturalLanguageIndicators?.length > 0,
+      !!structuredThinking.progressiveUnderstanding,
+      structuredThinking.transitionConnections?.length > 0,
+      !!structuredThinking.depthProgression,
+      !!structuredThinking.complexityHandling,
+      !!structuredThinking.problemSolvingApproach,
+      !!structuredThinking.balanceMetrics,
+      !!structuredThinking.focusMetrics
+    ];
+    
+    // Calculate quality score based on present elements
+    const presentCount = presentElements.filter(Boolean).length;
+    qualityScore = Math.min(0.95, Math.max(0.1, presentCount / presentElements.length));
+    
+    // Generate recommendations based on missing elements
+    if (!structuredThinking.systematicVerification) {
+      recommendations.push('Include more systematic verification of conclusions');
+    }
+    
+    if (!structuredThinking.errorPrevention) {
+      recommendations.push('Consider strategies for error prevention in your thinking');
+    }
+    
+    if (!structuredThinking.qualityMetrics) {
+      recommendations.push('Evaluate your thinking against quality metrics');
+    }
+    
+    if (!structuredThinking.domainIntegration) {
+      recommendations.push('Integrate domain-specific knowledge more explicitly');
+    }
+    
+    if (!structuredThinking.strategicMetaCognition) {
+      recommendations.push('Maintain better awareness of your overall solution strategy');
+    }
+    
+    if (!structuredThinking.synthesisApproach) {
+      recommendations.push('Develop a more explicit approach to synthesizing information');
+    }
+    
+    if (!structuredThinking.naturalLanguageIndicators || structuredThinking.naturalLanguageIndicators.length === 0) {
+      recommendations.push('Use more natural language indicators in your thinking');
+    }
+    
+    if (!structuredThinking.progressiveUnderstanding) {
+      recommendations.push('Show more progressive building of understanding');
+    }
+    
+    if (!structuredThinking.depthProgression) {
+      recommendations.push('Demonstrate clearer depth progression in your thinking');
+    }
+    
+    if (!structuredThinking.complexityHandling) {
+      recommendations.push('Improve handling of complexity in your thinking');
+    }
+    
+    if (!structuredThinking.problemSolvingApproach) {
+      recommendations.push('Develop a more explicit problem-solving approach');
+    }
+    
+    if (!structuredThinking.balanceMetrics) {
+      recommendations.push('Maintain better balance in your thinking process');
+    }
+    
+    if (!structuredThinking.focusMetrics) {
+      recommendations.push('Improve focus on the original query in your thinking');
+    }
+    
+    return {
+      qualityScore,
+      recommendations: recommendations.slice(0, 3) // Limit to top 3 recommendations
+    };
+  }
+
   private generateAdaptiveRecommendations(structuredThinking: ThinkingProcess, promptMetadata?: PromptMetadata): string[] {
     const recommendations: string[] = [];
     
